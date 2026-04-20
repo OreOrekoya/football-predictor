@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Football Match Predictor</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 2rem;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            color: #fff;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .form-card {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-group input {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #00ff87;
+        }
+
+        button {
+            width: 100%;
+            background: #00ff87;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            padding: 0.875rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        button:hover { opacity: 0.85; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .results {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 12px;
+            padding: 2rem;
+            display: none;
+        }
+
+        .winner-banner {
+            text-align: center;
+            background: #00ff8715;
+            border: 1px solid #00ff8740;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .winner-label {
+            font-size: 0.75rem;
+            color: #00ff87;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 0.25rem;
+        }
+
+        .winner-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .stat-card {
+            background: #1a1a1a;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.4rem;
+            font-size: 0.9rem;
+        }
+
+        .stat-row .team { color: #aaa; }
+        .stat-row .value { font-weight: 600; color: #fff; }
+        .stat-row .value.highlight { color: #00ff87; }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 1rem;
+            display: none;
+        }
+
+        .error {
+            background: #ff000015;
+            border: 1px solid #ff000040;
+            border-radius: 8px;
+            padding: 1rem;
+            color: #ff6b6b;
+            text-align: center;
+            display: none;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚽ Match Predictor</h1>
+        <p class="subtitle">Premier League predictions based on form & H2H</p>
+
+        <div class="form-card">
+            <div class="input-row">
+                <div class="input-group">
+                    <label>Home Team</label>
+                    <input type="text" id="team1" placeholder="e.g. Arsenal" />
+                </div>
+                <div class="input-group">
+                    <label>Away Team</label>
+                    <input type="text" id="team2" placeholder="e.g. Chelsea" />
+                </div>
+            </div>
+            <button id="predictBtn" onclick="predict()">Predict Match</button>
+        </div>
+
+        <div class="loading" id="loading">Analysing teams...</div>
+        <div class="error" id="error"></div>
+
+        <div class="results" id="results">
+            <div class="winner-banner">
+                <div class="winner-label">Predicted Winner</div>
+                <div class="winner-name" id="winnerText"></div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Form (last 5)</div>
+                    <div class="stat-row">
+                        <span class="team" id="form-t1-name"></span>
+                        <span class="value" id="form-t1"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="team" id="form-t2-name"></span>
+                        <span class="value" id="form-t2"></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Head to Head</div>
+                    <div class="stat-row">
+                        <span class="team" id="h2h-t1-name"></span>
+                        <span class="value" id="h2h-t1"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="team" id="h2h-t2-name"></span>
+                        <span class="value" id="h2h-t2"></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Goals Scored</div>
+                    <div class="stat-row">
+                        <span class="team" id="gs-t1-name"></span>
+                        <span class="value" id="gs-t1"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="team" id="gs-t2-name"></span>
+                        <span class="value" id="gs-t2"></span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg Goals Conceded</div>
+                    <div class="stat-row">
+                        <span class="team" id="gc-t1-name"></span>
+                        <span class="value" id="gc-t1"></span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="team" id="gc-t2-name"></span>
+                        <span class="value" id="gc-t2"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function predict() {
+            const team1 = document.getElementById('team1').value.trim();
+            const team2 = document.getElementById('team2').value.trim();
+
+            if (!team1 || !team2) return;
+
+            document.getElementById('predictBtn').disabled = true;
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ team1, team2 })
+                });
+
+                const data = await response.json();
+
+                if (data.error) {
+                    document.getElementById('error').textContent = data.error;
+                    document.getElementById('error').style.display = 'block';
+                } else {
+                    displayResults(data);
+                }
+            } catch (e) {
+                document.getElementById('error').textContent = 'Something went wrong. Try again.';
+                document.getElementById('error').style.display = 'block';
+            }
+
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('predictBtn').disabled = false;
+        }
+
+        function displayResults(data) {
+            document.getElementById('winnerText').textContent = data.winner;
+            
+            document.getElementById('form-t1-name').textContent = data.team1;
+            document.getElementById('form-t1').textContent = data.team1_form + ' pts';
+            document.getElementById('form-t2-name').textContent = data.team2;
+            document.getElementById('form-t2').textContent = data.team2_form + ' pts';
+
+            document.getElementById('h2h-t1-name').textContent = data.team1;
+            document.getElementById('h2h-t1').textContent = data.team1_h2h + ' pts';
+            document.getElementById('h2h-t2-name').textContent = data.team2;
+            document.getElementById('h2h-t2').textContent = data.team2_h2h + ' pts';
+
+            document.getElementById('gs-t1-name').textContent = data.team1;
+            document.getElementById('gs-t1').textContent = data.team1_avg_scored;
+            document.getElementById('gs-t2-name').textContent = data.team2;
+            document.getElementById('gs-t2').textContent = data.team2_avg_scored;
+
+            document.getElementById('gc-t1-name').textContent = data.team1;
+            document.getElementById('gc-t1').textContent = data.team1_avg_conceded;
+            document.getElementById('gc-t2-name').textContent = data.team2;
+            document.getElementById('gc-t2').textContent = data.team2_avg_conceded;
+
+            document.getElementById('results').style.display = 'block';
+        }
+
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Enter') predict();
+        });
+    </script>
+</body>
+</html>

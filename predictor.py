@@ -46,10 +46,8 @@ def calculate_avg_goals(fixtures, team_id):
     avg_conceded = sum(conceded) / len(conceded) if conceded else 0
     return avg_scored, avg_conceded
 
-def predict_match(team1_id, team2_id, team1_name, team2_name):
-    """Predict match outcome based on form and h2h"""
-    print(f"\nAnalysing: {team1_name} vs {team2_name}...\n")
-
+def predict_match_data(team1_id, team2_id, team1_name, team2_name):
+    """Return prediction data as a dict for the web UI"""
     team1_form = get_team_form(team1_id)
     team2_form = get_team_form(team2_id)
     h2h = get_head_to_head(team1_id, team2_id)
@@ -57,31 +55,32 @@ def predict_match(team1_id, team2_id, team1_name, team2_name):
     team1_score = calculate_form_score(team1_form, team1_id)
     team2_score = calculate_form_score(team2_form, team2_id)
 
-    team1_h2h_score = calculate_form_score(h2h, team1_id)
-    team2_h2h_score = calculate_form_score(h2h, team2_id)
+    team1_h2h = calculate_form_score(h2h, team1_id)
+    team2_h2h = calculate_form_score(h2h, team2_id)
 
     team1_avg_scored, team1_avg_conceded = calculate_avg_goals(team1_form, team1_id)
     team2_avg_scored, team2_avg_conceded = calculate_avg_goals(team2_form, team2_id)
 
-    team1_total = team1_score + team1_h2h_score
-    team2_total = team2_score + team2_h2h_score
+    team1_total = team1_score + team1_h2h
+    team2_total = team2_score + team2_h2h
 
-    print(f"--- Form (last 5) ---")
-    print(f"{team1_name}: {team1_score}/15 pts")
-    print(f"{team2_name}: {team2_score}/15 pts")
-
-    print(f"\n--- Head to Head (last 5) ---")
-    print(f"{team1_name}: {team1_h2h_score} pts")
-    print(f"{team2_name}: {team2_h2h_score} pts")
-
-    print(f"\n--- Avg Goals Scored ---")
-    print(f"{team1_name}: {team1_avg_scored:.1f} | Conceded: {team1_avg_conceded:.1f}")
-    print(f"{team2_name}: {team2_avg_scored:.1f} | Conceded: {team2_avg_conceded:.1f}")
-
-    print(f"\n--- Prediction ---")
     if team1_total > team2_total:
-        print(f"Winner: {team1_name}")
+        winner = team1_name.title()
     elif team2_total > team1_total:
-        print(f"Winner: {team2_name}")
+        winner = team2_name.title()
     else:
-        print("Too close to call — likely a draw")
+        winner = "Draw"
+
+    return {
+        "team1": team1_name.title(),
+        "team2": team2_name.title(),
+        "team1_form": team1_score,
+        "team2_form": team2_score,
+        "team1_h2h": team1_h2h,
+        "team2_h2h": team2_h2h,
+        "team1_avg_scored": round(team1_avg_scored, 1),
+        "team2_avg_scored": round(team2_avg_scored, 1),
+        "team1_avg_conceded": round(team1_avg_conceded, 1),
+        "team2_avg_conceded": round(team2_avg_conceded, 1),
+        "winner": winner
+    }
